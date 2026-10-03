@@ -2,11 +2,12 @@
   "name": "task-priority-board",
   "version": "1.0.0",
   "private": true,
-  "description": "Task Priority Board with React and Vite",
+  "description": "Task Priority Board with React 19, TypeScript and Vite",
   "scripts": {
     "dev": "npm --prefix task-board run dev",
     "build": "npm --prefix task-board run build",
     "lint": "npm --prefix task-board run lint",
-    "test": "node task-board/verify.test.js"
+    "format": "npm --prefix task-board run format",
+    "test": "npm --prefix task-board test"
   }
 }

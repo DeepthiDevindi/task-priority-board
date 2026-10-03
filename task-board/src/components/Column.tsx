@@ -1,31 +1,42 @@
 import React, { useState } from 'react';
+import { Task, Priority, PriorityConfig } from '../types';
 import TaskCard from './TaskCard';
 
-/**
- * Column Component
- * Represents one of the 4 priority sections.
- * Filters the single tasks array by priority.key and renders header, count,
- * cards or an empty-state message.
- */
-export function Column({ priority, tasks, moveTask }) {
+interface ColumnProps {
+  priority: PriorityConfig;
+  tasks: Task[];
+  searchQuery: string;
+  moveTask: (id: string, newPriority: Priority) => void;
+  editTask: (id: string, newTitle: string) => { success: boolean; error?: string };
+  deleteTask: (id: string) => void;
+}
+
+export function Column({
+  priority,
+  tasks,
+  searchQuery,
+  moveTask,
+  editTask,
+  deleteTask,
+}: ColumnProps) {
   const [isDragOver, setIsDragOver] = useState(false);
 
-  // Derived list: filters the single source of truth tasks array
+  // Derived tasks filtered from the single tasks array
   const columnTasks = tasks.filter((t) => t.priority === priority.key);
 
-  const handleDragOver = (e) => {
+  const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
     e.dataTransfer.dropEffect = 'move';
     if (!isDragOver) setIsDragOver(true);
   };
 
-  const handleDragLeave = (e) => {
-    if (!e.currentTarget.contains(e.relatedTarget)) {
+  const handleDragLeave = (e: React.DragEvent) => {
+    if (!e.currentTarget.contains(e.relatedTarget as Node)) {
       setIsDragOver(false);
     }
   };
 
-  const handleDrop = (e) => {
+  const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
     setIsDragOver(false);
     const taskId = e.dataTransfer.getData('text/plain');
@@ -55,8 +66,14 @@ export function Column({ priority, tasks, moveTask }) {
       <div className="column-content">
         {columnTasks.length === 0 ? (
           <div className="empty-state" role="status">
-            <p className="empty-state-text">No tasks in {priority.label}</p>
-            <span className="empty-state-subtext">Move tasks here to prioritize</span>
+            <p className="empty-state-text">
+              {searchQuery
+                ? `No tasks matching "${searchQuery}"`
+                : priority.emptyMessage || `No tasks in ${priority.label}`}
+            </p>
+            <span className="empty-state-subtext">
+              {searchQuery ? 'Try another search term' : 'Drag items or use move buttons'}
+            </span>
           </div>
         ) : (
           <div className="task-list">
@@ -65,6 +82,8 @@ export function Column({ priority, tasks, moveTask }) {
                 key={task.id}
                 task={task}
                 moveTask={moveTask}
+                editTask={editTask}
+                deleteTask={deleteTask}
               />
             ))}
           </div>

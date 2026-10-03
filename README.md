@@ -1,115 +1,177 @@
-# Task Priority Board
+# ⚡ Task Priority Board
 
-A lightweight, interview-ready Kanban-style task priority board built with **React 19**, **Vite**, and **Plain CSS** (no external UI or state libraries).
+A high-performance, interview-ready Kanban-style task priority board built with **React 19**, **TypeScript**, **Vite**, and **Plain CSS** (no UI libraries). Designed around a strict **Single Source of Truth** architecture, derived state, and immutable updates.
 
 ---
 
-## 🚀 Key Architectural & Design Decisions
+## 🌟 Features Overview
+
+### 1. Core Kanban & State Management
+- **Single Source of Truth**: All tasks live in a single `tasks` array managed via `useReducer` in the custom `useTasks()` hook.
+- **Derived Priority Sections**: 4 columns (**Unassigned**, **High Priority**, **Medium Priority**, **Low Priority**) dynamically filter the central state.
+- **Task Creation with Validation**: Form ensures required, trimmed titles and strictly prevents duplicate task names (case-insensitive).
+- **Inline Editing**: Double-click any task title or click the edit icon (✎) to update titles inline with instant validation.
+- **Delete with Confirmation**: Safeguarded task removal with explicit user confirmation.
+- **Native HTML5 Drag and Drop**: Drag tasks across columns with dynamic visual dropzone highlights (`is-drag-over`), plus keyboard-accessible move buttons as fallbacks.
+- **Context-Aware Move & Unassign**:
+  - Buttons for High, Medium, Low automatically hide the button for the task's current priority.
+  - An **↩ Unassign** button appears only when a task is in High, Medium, or Low, returning it to Unassigned.
+- **Live Search Filter**: Real-time title search narrowing down tasks across all four columns with match count indicators.
+- **Undo History**: Integrated reducer-level history stack allowing immediate rollback of the last action.
+
+### 2. UI & Accessibility (a11y)
+- **Dark / Light Theme Toggle**: Persistent custom CSS variable design tokens for seamless dark/light modes.
+- **Accessible Assistive Tech Support**: Live `aria-live="polite"` region announcing state transitions (e.g. *"Task X moved to High Priority"*, *"Task title updated"*).
+- **Accessible Controls**: Fully navigable with keyboard focus rings and descriptive `aria-label` tags on every interactive element.
+- **Responsive Layout**: Clean 4-column CSS Grid that smoothly adapts to 2 columns on tablets and 1 column on mobile screens.
+
+---
+
+## 🛠️ Tech Stack
+
+- **Framework**: React 19 (Hooks, Functional Components, `React.memo`, `useCallback`)
+- **Language**: TypeScript (Strict typing for `Task`, `Priority`, and `PriorityConfig`)
+- **Build Tool**: Vite 8
+- **Styling**: Vanilla CSS (CSS Variables, Responsive CSS Grid, Glassmorphism, Micro-animations)
+- **Testing**: Vitest + React Testing Library + `@testing-library/jest-dom` (22 unit & integration tests)
+- **Code Quality**: Oxlint + Prettier
+
+---
+
+## 🏛️ Architecture & Design Decisions
 
 ### 1. Single Source of Truth
-- The entire application state lives in a single `tasks` array managed by `useState` in `App.jsx`.
-- Each task object has the strict shape:
-  ```ts
-  {
-    id: string;
-    title: string;
-    priority: "unassigned" | "high" | "medium" | "low";
-  }
-  ```
-- **Why this matters:** Having separate arrays for each column (e.g., `highTasks`, `mediumTasks`, `lowTasks`) introduces duplicate state, synchronization overhead, and potential edge-case bugs when moving tasks. A single array guarantees data integrity.
+Instead of maintaining fragmented arrays for each column (`highTasks`, `mediumTasks`, `lowTasks`, `unassignedTasks`), all tasks exist strictly within a single `tasks` array:
+```ts
+export type Priority = 'unassigned' | 'high' | 'medium' | 'low';
 
-### 2. Derived Columns (Zero Redundancy)
-- Priority columns do not store local copies or independent slices of state.
-- Each `Column` component receives the central `tasks` array and filters items dynamically:
-  ```jsx
-  const columnTasks = tasks.filter((t) => t.priority === priority.key);
-  ```
-- Task counts (`columnTasks.length`) and empty-state triggers are computed directly on the fly.
+export interface Task {
+  id: string;
+  title: string;
+  priority: Priority;
+}
+```
+**Why this matters**: Multiple state arrays inevitably cause synchronization issues, duplicate items, or race conditions during rapid state transitions. A single array guarantees data integrity and simplifies persistence.
 
-### 3. Immutable State Updates
-- Moving a task between priority columns or unassigning it uses pure immutable functional updates:
-  ```jsx
-  const moveTask = (id, newPriority) => {
-    setTasks((prev) =>
-      prev.map((t) => (t.id === id ? { ...t, priority: newPriority } : t))
-    );
-  };
-  ```
-- Unassigning a task reuses the exact same function with `newPriority = "unassigned"`, avoiding redundant handler logic.
+### 2. Purely Derived State (Zero Redundancy)
+Each `Column` calculates its displayed tasks dynamically by filtering the master list:
+```tsx
+const columnTasks = tasks.filter((t) => t.priority === priority.key);
+```
+Counts and empty states are computed on the fly without storing duplicate copies in child state.
 
-### 4. Dynamic Column Generation via Constants
-- Columns are not hardcoded. Instead, `src/constants.js` defines:
-  ```js
-  export const PRIORITIES = [
-    { key: 'unassigned', label: 'Unassigned' },
-    { key: 'high', label: 'High Priority' },
-    { key: 'medium', label: 'Medium Priority' },
-    { key: 'low', label: 'Low Priority' }
-  ];
-  ```
-- `Board.jsx` maps over `PRIORITIES` to render each `Column`, ensuring extensibility if priority tiers change.
+### 3. Reducer Pattern & Undo Stack
+All mutations pass through `tasksReducer`, ensuring predictable transitions:
+- `ADD_TASK`
+- `MOVE_TASK`
+- `EDIT_TASK`
+- `DELETE_TASK`
+- `UNDO`
+- `RESET_TASKS`
 
-### 5. Context-Aware Action Controls & Accessibility
-- **Targeted Buttons:** A `TaskCard` presents buttons to move to High, Medium, or Low, automatically hiding the button for its current priority.
-- **Unassign Button:** Shown only when a task is currently in `high`, `medium`, or `low` (hidden when already `unassigned`).
-- **Accessibility:** Interactive buttons include explicit `aria-label` attributes for screen reader clarity.
+Every modifying action snapshots the previous state into an immutable `history` stack, enabling instant **Undo** capability without external middleware.
 
-### 6. Responsive CSS Grid & HTML5 Drag and Drop
-- Built with standard CSS Grid: 4 columns on desktop, 2 columns on tablet, and single-column stack on mobile screens.
-- Includes native HTML5 drag-and-drop: drag any card into another column to update its priority immediately.
+### 4. Performance Optimization
+- `TaskCard` is wrapped with `React.memo` to eliminate unnecessary re-renders when other cards change.
+- All handler functions passed to child components are stabilized using `useCallback`.
+- Search filtering is memoized with `useMemo`.
 
 ---
 
-## 📂 Project Structure
+## 📁 Project Structure
 
 ```
 task-priority-board/
 ├── task-board/
 │   ├── src/
 │   │   ├── components/
-│   │   │   ├── Board.jsx       # Maps PRIORITIES to Columns
-│   │   │   ├── Column.jsx      # Filters tasks, renders header count & empty state
-│   │   │   └── TaskCard.jsx    # Displays title, drag handles & contextual move buttons
-│   │   ├── constants.js        # PRIORITIES definitions & INITIAL_TASKS seed
-│   │   ├── App.jsx             # Single tasks state, moveTask handler, and layout
-│   │   ├── App.css             # Component styling, responsive CSS grid, card states
-│   │   ├── index.css           # Global tokens and resets
-│   │   └── main.jsx            # React root mount
-│   ├── verify.test.js          # Automated verification script
+│   │   │   ├── Board.tsx         # Maps PRIORITIES constant into Columns
+│   │   │   ├── Column.tsx        # Column dropzone, headers, counts, empty state
+│   │   │   ├── TaskCard.tsx      # Memoized card, inline editing, move buttons
+│   │   │   ├── TaskForm.tsx      # Task creation form with validation
+│   │   │   ├── SearchBar.tsx     # Cross-column search input
+│   │   │   └── ThemeToggle.tsx   # Light/dark mode toggle button
+│   │   ├── constants/
+│   │   │   └── index.ts          # PRIORITIES metadata & 8 seed tasks
+│   │   ├── hooks/
+│   │   │   ├── useTasks.ts       # Central tasks state, persistence & handlers
+│   │   │   └── useTheme.ts       # Theme state & localStorage synchronization
+│   │   ├── reducer/
+│   │   │   └── tasksReducer.ts   # Action handlers & undo history stack
+│   │   ├── types/
+│   │   │   ├── task.ts           # Task and Priority union definitions
+│   │   │   └── index.ts          # Type exports
+│   │   ├── utils/
+│   │   │   └── validation.ts     # Title trimming and duplicate checks
+│   │   ├── tests/
+│   │   │   ├── setup.ts          # Vitest jest-dom setup
+│   │   │   ├── tasksReducer.test.ts # Reducer unit tests (14 tests)
+│   │   │   └── TaskBoard.test.tsx   # React Testing Library integration tests (8 tests)
+│   │   ├── App.tsx               # App layout, announcer, and provider
+│   │   ├── App.css               # Component CSS, responsive grid & card styles
+│   │   ├── index.css             # Theme variables & base typography
+│   │   └── main.tsx              # React DOM entry point
 │   ├── package.json
-│   └── vite.config.js
+│   ├── tsconfig.json
+│   ├── vite.config.ts
+│   └── .prettierrc
 └── README.md
 ```
 
 ---
 
-## 🛠️ Running Locally
+## 🚀 Getting Started
 
-1. Navigate to the project directory:
-   ```bash
-   cd task-board
-   ```
-2. Install dependencies:
-   ```bash
-   npm install
-   ```
-3. Start the Vite development server:
-   ```bash
-   npm run dev
-   ```
-4. Run logic verification test:
-   ```bash
-   node verify.test.js
-   ```
+### 1. Installation
+```bash
+cd task-board
+npm install
+```
+
+### 2. Development Server
+```bash
+npm run dev
+```
+Open `http://localhost:5173/` in your browser.
+
+### 3. Run Tests
+```bash
+npm test
+```
+Executes all 22 Vitest and React Testing Library tests covering reducer logic, task creation, moves, unassigning, inline editing, deletion, search filtering, and undo.
+
+### 4. Build Production Bundle
+```bash
+npm run build
+```
+
+### 5. Format & Lint
+```bash
+npm run format
+npm run lint
+```
 
 ---
 
-## 🧪 Verification Checklist
+## 🚢 Deploying to Vercel
 
-- [x] Initial seed contains 8 tasks, all in "Unassigned".
-- [x] Moving a task updates the column count and moves the card immediately.
-- [x] Move button for current priority is hidden.
-- [x] "Unassign" button is hidden in "Unassigned" and visible in "High", "Medium", and "Low".
-- [x] Clicking "Unassign" returns task to "Unassigned".
-- [x] Empty state messages render when a column has 0 tasks.
-- [x] Zero state mutations throughout the app lifecycle.
+You can deploy this project to [Vercel](https://vercel.com/) in under two minutes:
+
+### Option A: Via Vercel Web Dashboard (Recommended)
+1. Push your repository to GitHub.
+2. Sign in to [Vercel](https://vercel.com/) and click **Add New Project**.
+3. Import your GitHub repository (`task-priority-board`).
+4. In the configuration settings:
+   - **Root Directory**: Select `task-board`
+   - **Framework Preset**: `Vite`
+   - **Build Command**: `npm run build`
+   - **Output Directory**: `dist`
+5. Click **Deploy**. Vercel will automatically build and deploy your application.
+
+### Option B: Via Vercel CLI
+```bash
+npm i -g vercel
+cd task-board
+vercel
+```
+Follow the interactive prompts to deploy.
