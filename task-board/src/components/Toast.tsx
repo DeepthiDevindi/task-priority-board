@@ -25,7 +25,9 @@ export function Toast({ message, canUndo, onUndo, onDismiss, duration }: ToastPr
 
   // Always call the latest onDismiss without restarting the timer when the parent re-renders
   const onDismissRef = useRef(onDismiss);
-  onDismissRef.current = onDismiss;
+  useEffect(() => {
+    onDismissRef.current = onDismiss;
+  });
 
   useEffect(() => {
     if (isPaused || !onDismissRef.current) return;

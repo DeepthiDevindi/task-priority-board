@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useTasks } from './hooks/useTasks';
 import { useTheme } from './hooks/useTheme';
 import Board from './components/Board';
@@ -39,10 +39,13 @@ export function App() {
 
   // Every board action (new announcement or new tasks state) shows a fresh toast.
   // Keying the Toast by toastId restarts its auto-dismiss timer, and clears an earlier dismissal.
-  useEffect(() => {
+  // Adjusted during render (not in an effect) to avoid an extra cascading render.
+  const [toastSource, setToastSource] = useState({ lastAnnouncement, tasks });
+  if (toastSource.lastAnnouncement !== lastAnnouncement || toastSource.tasks !== tasks) {
+    setToastSource({ lastAnnouncement, tasks });
     setToastDismissed(false);
     setToastId((id) => id + 1);
-  }, [lastAnnouncement, tasks]);
+  }
 
   // Derived filtered tasks across all columns
   const filteredTasks = useMemo(() => {

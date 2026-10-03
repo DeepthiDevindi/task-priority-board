@@ -1098,6 +1098,17 @@
   }
 }
 
+/* Phones: use the full width instead of squeezing into a tall multi-line pill */
+@media (max-width: 680px) {
+  .bottom-toast {
+    width: calc(100% - 32px);
+    max-width: none;
+    bottom: 16px;
+    border-radius: var(--radius-md);
+    justify-content: space-between;
+  }
+}
+
 .toast-content {
   display: flex;
   align-items: center;
