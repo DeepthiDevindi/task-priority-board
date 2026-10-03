@@ -1,177 +1,154 @@
-# ⚡ Task Priority Board
+# Task Priority Board
 
-A high-performance, interview-ready Kanban-style task priority board built with **React 19**, **TypeScript**, **Vite**, and **Plain CSS** (no UI libraries). Designed around a strict **Single Source of Truth** architecture, derived state, and immutable updates.
+**Live demo:** https://task-priority-board-tau.vercel.app
+**GitHub:** https://github.com/DeepthiDevindi/task-priority-board
 
----
-
-## 🌟 Features Overview
-
-### 1. Core Kanban & State Management
-- **Single Source of Truth**: All tasks live in a single `tasks` array managed via `useReducer` in the custom `useTasks()` hook.
-- **Derived Priority Sections**: 4 columns (**Unassigned**, **High Priority**, **Medium Priority**, **Low Priority**) dynamically filter the central state.
-- **Task Creation with Validation**: Form ensures required, trimmed titles and strictly prevents duplicate task names (case-insensitive).
-- **Inline Editing**: Double-click any task title or click the edit icon (✎) to update titles inline with instant validation.
-- **Delete with Confirmation**: Safeguarded task removal with explicit user confirmation.
-- **Native HTML5 Drag and Drop**: Drag tasks across columns with dynamic visual dropzone highlights (`is-drag-over`), plus keyboard-accessible move buttons as fallbacks.
-- **Context-Aware Move & Unassign**:
-  - Buttons for High, Medium, Low automatically hide the button for the task's current priority.
-  - An **↩ Unassign** button appears only when a task is in High, Medium, or Low, returning it to Unassigned.
-- **Live Search Filter**: Real-time title search narrowing down tasks across all four columns with match count indicators.
-- **Undo History**: Integrated reducer-level history stack allowing immediate rollback of the last action.
-
-### 2. UI & Accessibility (a11y)
-- **Dark / Light Theme Toggle**: Persistent custom CSS variable design tokens for seamless dark/light modes.
-- **Accessible Assistive Tech Support**: Live `aria-live="polite"` region announcing state transitions (e.g. *"Task X moved to High Priority"*, *"Task title updated"*).
-- **Accessible Controls**: Fully navigable with keyboard focus rings and descriptive `aria-label` tags on every interactive element.
-- **Responsive Layout**: Clean 4-column CSS Grid that smoothly adapts to 2 columns on tablets and 1 column on mobile screens.
+A Kanban-style board for sorting tasks into **Unassigned**, **High**, **Medium** and **Low** priority. Built with **React 19**, **TypeScript**, **Vite** and plain CSS (no UI libraries), around a single source of truth, derived columns and immutable updates.
 
 ---
 
-## 🛠️ Tech Stack
+## Features
 
-- **Framework**: React 19 (Hooks, Functional Components, `React.memo`, `useCallback`)
-- **Language**: TypeScript (Strict typing for `Task`, `Priority`, and `PriorityConfig`)
-- **Build Tool**: Vite 8
-- **Styling**: Vanilla CSS (CSS Variables, Responsive CSS Grid, Glassmorphism, Micro-animations)
-- **Testing**: Vitest + React Testing Library + `@testing-library/jest-dom` (22 unit & integration tests)
-- **Code Quality**: Oxlint + Prettier
+**Tasks**
+- Add tasks with an initial priority. Titles are trimmed, required and must be unique (case-insensitive).
+- Move tasks between columns with the **⇄ move menu** (only valid targets are shown, plus **Unassign** for prioritized tasks) or with **drag and drop**.
+- Edit titles inline (double-click or ✎) with the same validation, and delete with confirmation.
+- **Undo** the last action from the toast notification.
+- Search filters tasks by title across all four columns.
+- The board is saved to `localStorage`, so it survives a page refresh. **Reset** restores the 8 seed tasks.
+
+**Interface**
+- Light and dark themes (remembered between visits).
+- Progress summary showing how many tasks have been prioritized.
+- Responsive layout: 4 columns on desktop. On tablets and phones the columns become a swipeable row with a sticky column navigator (counts per column, tap to jump).
+- Toasts auto-dismiss (4s, or 7s when Undo is offered) and pause while hovered or focused.
+
+**Accessibility**
+- Every control is keyboard operable with visible focus rings and descriptive labels.
+- The move menu and priority picker follow WAI-ARIA menu and listbox patterns (arrow keys, Home/End, Enter, Escape).
+- A polite live region announces changes such as *"Task X moved to High Priority"*.
+- Text colours meet WCAG AA contrast in both themes.
 
 ---
 
-## 🏛️ Architecture & Design Decisions
+## Tech stack
 
-### 1. Single Source of Truth
-Instead of maintaining fragmented arrays for each column (`highTasks`, `mediumTasks`, `lowTasks`, `unassignedTasks`), all tasks exist strictly within a single `tasks` array:
+| Area | Tools |
+|---|---|
+| UI | React 19 (hooks, `useReducer`, `React.memo`, `useCallback`, `useMemo`) |
+| Language | TypeScript |
+| Build | Vite 8 |
+| Styling | Plain CSS with design tokens (CSS custom properties) |
+| Testing | Vitest, React Testing Library, jest-dom (24 tests) |
+| Code quality | Oxlint, Prettier |
+| Hosting | Vercel (auto-deploys from `main`) |
+
+---
+
+## Run locally
+
+Requires Node.js 20+ (developed on Node 24).
+
+```bash
+git clone https://github.com/DeepthiDevindi/task-priority-board.git
+cd task-priority-board/task-board
+npm install
+npm run dev
+```
+
+Then open http://localhost:5173.
+
+Other scripts (run inside `task-board/`):
+
+| Command | What it does |
+|---|---|
+| `npm run build` | Production build into `dist/` |
+| `npm run preview` | Serve the production build locally |
+| `npm run lint` | Lint with Oxlint |
+| `npm run format` | Format with Prettier |
+
+---
+
+## Run tests
+
+```bash
+cd task-board
+npm test            # run once
+npm run test:watch  # watch mode
+```
+
+The suite has 24 tests:
+- **Reducer unit tests** (`src/tests/tasksReducer.test.ts`): add, move, edit, delete, undo, reset and title validation.
+- **Integration tests** (`src/tests/TaskBoard.test.tsx`): render the whole app and cover adding tasks, moving through High → Medium → Low → Unassign, editing, deleting, search, undo, theme toggle, the priority picker and toast auto-dismiss.
+
+---
+
+## Design decisions
+
+### Single source of truth
+All tasks live in one array. Each task carries its own priority, instead of separate arrays per column:
+
 ```ts
-export type Priority = 'unassigned' | 'high' | 'medium' | 'low';
+type Priority = 'unassigned' | 'high' | 'medium' | 'low';
 
-export interface Task {
+interface Task {
   id: string;
   title: string;
   priority: Priority;
 }
 ```
-**Why this matters**: Multiple state arrays inevitably cause synchronization issues, duplicate items, or race conditions during rapid state transitions. A single array guarantees data integrity and simplifies persistence.
 
-### 2. Purely Derived State (Zero Redundancy)
-Each `Column` calculates its displayed tasks dynamically by filtering the master list:
-```tsx
+Moving a task only changes its `priority` field. A task can't end up in two columns or get lost between them, and persistence is a single `localStorage` write.
+
+### Derived columns
+Columns don't store tasks. Each one filters the master list when it renders:
+
+```ts
 const columnTasks = tasks.filter((t) => t.priority === priority.key);
 ```
-Counts and empty states are computed on the fly without storing duplicate copies in child state.
 
-### 3. Reducer Pattern & Undo Stack
-All mutations pass through `tasksReducer`, ensuring predictable transitions:
-- `ADD_TASK`
-- `MOVE_TASK`
-- `EDIT_TASK`
-- `DELETE_TASK`
-- `UNDO`
-- `RESET_TASKS`
+Column counts, empty states, the progress summary and search results are all computed from the same array, so they can't drift out of sync.
 
-Every modifying action snapshots the previous state into an immutable `history` stack, enabling instant **Undo** capability without external middleware.
+### Immutable updates
+Every change goes through a single reducer (`tasksReducer`) with the actions `ADD_TASK`, `MOVE_TASK`, `EDIT_TASK`, `DELETE_TASK`, `UNDO` and `RESET_TASKS`. Updates never mutate state; they return new arrays with `map`, `filter` and spread:
 
-### 4. Performance Optimization
-- `TaskCard` is wrapped with `React.memo` to eliminate unnecessary re-renders when other cards change.
-- All handler functions passed to child components are stabilized using `useCallback`.
-- Search filtering is memoized with `useMemo`.
+```ts
+case 'MOVE_TASK': {
+  const nextTasks = state.tasks.map((t) =>
+    t.id === action.payload.id ? { ...t, priority: action.payload.priority } : t
+  );
+  return {
+    tasks: nextTasks,
+    history: [state.tasks, ...state.history].slice(0, MAX_HISTORY_LENGTH),
+    lastAnnouncement: `Task "${targetTask.title}" moved to ${priorityLabel}.`,
+  };
+}
+```
+
+Because old arrays are never changed, the previous `tasks` array can be pushed onto a history stack as-is. That is what makes **Undo** simple: it pops the last snapshot. It also lets `React.memo` skip re-rendering cards that didn't change.
 
 ---
 
-## 📁 Project Structure
+## Project structure
 
 ```
 task-priority-board/
-├── task-board/
-│   ├── src/
-│   │   ├── components/
-│   │   │   ├── Board.tsx         # Maps PRIORITIES constant into Columns
-│   │   │   ├── Column.tsx        # Column dropzone, headers, counts, empty state
-│   │   │   ├── TaskCard.tsx      # Memoized card, inline editing, move buttons
-│   │   │   ├── TaskForm.tsx      # Task creation form with validation
-│   │   │   ├── SearchBar.tsx     # Cross-column search input
-│   │   │   └── ThemeToggle.tsx   # Light/dark mode toggle button
-│   │   ├── constants/
-│   │   │   └── index.ts          # PRIORITIES metadata & 8 seed tasks
-│   │   ├── hooks/
-│   │   │   ├── useTasks.ts       # Central tasks state, persistence & handlers
-│   │   │   └── useTheme.ts       # Theme state & localStorage synchronization
-│   │   ├── reducer/
-│   │   │   └── tasksReducer.ts   # Action handlers & undo history stack
-│   │   ├── types/
-│   │   │   ├── task.ts           # Task and Priority union definitions
-│   │   │   └── index.ts          # Type exports
-│   │   ├── utils/
-│   │   │   └── validation.ts     # Title trimming and duplicate checks
-│   │   ├── tests/
-│   │   │   ├── setup.ts          # Vitest jest-dom setup
-│   │   │   ├── tasksReducer.test.ts # Reducer unit tests (14 tests)
-│   │   │   └── TaskBoard.test.tsx   # React Testing Library integration tests (8 tests)
-│   │   ├── App.tsx               # App layout, announcer, and provider
-│   │   ├── App.css               # Component CSS, responsive grid & card styles
-│   │   ├── index.css             # Theme variables & base typography
-│   │   └── main.tsx              # React DOM entry point
-│   ├── package.json
-│   ├── tsconfig.json
-│   ├── vite.config.ts
-│   └── .prettierrc
-└── README.md
+└── task-board/                 # the Vite app (Vercel root directory)
+    ├── src/
+    │   ├── components/         # Board, Column, TaskCard, TaskForm, PrioritySelect,
+    │   │                       # SearchBar, ThemeToggle, Toast, LogoMark
+    │   ├── constants/          # PRIORITIES config and seed tasks
+    │   ├── hooks/              # useTasks (state + persistence), useTheme
+    │   ├── reducer/            # tasksReducer with undo history
+    │   ├── types/              # Task and Priority types
+    │   ├── utils/              # title validation
+    │   └── tests/              # Vitest suites
+    ├── vercel.json             # Vercel build settings
+    └── vite.config.ts
 ```
 
 ---
 
-## 🚀 Getting Started
+## Deployment
 
-### 1. Installation
-```bash
-cd task-board
-npm install
-```
-
-### 2. Development Server
-```bash
-npm run dev
-```
-Open `http://localhost:5173/` in your browser.
-
-### 3. Run Tests
-```bash
-npm test
-```
-Executes all 22 Vitest and React Testing Library tests covering reducer logic, task creation, moves, unassigning, inline editing, deletion, search filtering, and undo.
-
-### 4. Build Production Bundle
-```bash
-npm run build
-```
-
-### 5. Format & Lint
-```bash
-npm run format
-npm run lint
-```
-
----
-
-## 🚢 Deploying to Vercel
-
-You can deploy this project to [Vercel](https://vercel.com/) in under two minutes:
-
-### Option A: Via Vercel Web Dashboard (Recommended)
-1. Push your repository to GitHub.
-2. Sign in to [Vercel](https://vercel.com/) and click **Add New Project**.
-3. Import your GitHub repository (`task-priority-board`).
-4. In the configuration settings:
-   - **Root Directory**: Select `task-board`
-   - **Framework Preset**: `Vite`
-   - **Build Command**: `npm run build`
-   - **Output Directory**: `dist`
-5. Click **Deploy**. Vercel will automatically build and deploy your application.
-
-### Option B: Via Vercel CLI
-```bash
-npm i -g vercel
-cd task-board
-vercel
-```
-Follow the interactive prompts to deploy.
+The app is hosted on Vercel with the project's root directory set to `task-board`, framework Vite, build command `npm run build` and output directory `dist`. Every push to `main` deploys to production automatically.
