@@ -2,31 +2,32 @@ import { PriorityConfig, Task } from '../types';
 
 /**
  * Priority sections configuration for dynamic column rendering
+ * with human-centered personality copy and gentle color tints.
  */
 export const PRIORITIES: PriorityConfig[] = [
   {
     key: 'unassigned',
     label: 'Unassigned',
     color: 'var(--color-unassigned)',
-    emptyMessage: 'No unassigned tasks remaining. All items are prioritized!',
+    emptyMessage: 'Nothing waiting. Nice work!',
   },
   {
     key: 'high',
     label: 'High Priority',
     color: 'var(--color-high)',
-    emptyMessage: 'No high-priority tasks. Critical items are clear!',
+    emptyMessage: 'No fires to put out right now.',
   },
   {
     key: 'medium',
     label: 'Medium Priority',
     color: 'var(--color-medium)',
-    emptyMessage: 'No medium-priority tasks in progress.',
+    emptyMessage: 'Nothing here yet. Drag a task in.',
   },
   {
     key: 'low',
     label: 'Low Priority',
     color: 'var(--color-low)',
-    emptyMessage: 'No low-priority backlog items.',
+    emptyMessage: 'Easy does it. Nothing here yet.',
   },
 ];
 

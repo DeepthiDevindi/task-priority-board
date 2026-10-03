@@ -14,8 +14,8 @@ export function SearchBar({
   filteredTasksCount,
 }: SearchBarProps) {
   return (
-    <div className="search-bar-wrap" role="search" aria-label="Filter tasks">
-      <div className="search-input-container">
+    <div className="search-bar-wrapper" role="search" aria-label="Filter tasks">
+      <div className="search-input-field">
         <span className="search-icon" aria-hidden="true">
           🔍
         </span>
@@ -42,7 +42,7 @@ export function SearchBar({
       </div>
 
       {searchQuery && (
-        <span className="search-results-badge" aria-live="polite">
+        <span className="search-results-pill" aria-live="polite">
           Showing {filteredTasksCount} of {totalTasks} tasks
         </span>
       )}

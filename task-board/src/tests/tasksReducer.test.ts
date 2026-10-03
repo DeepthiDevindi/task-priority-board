@@ -153,7 +153,7 @@ describe('validateTaskTitle Unit Tests', () => {
   it('should reject empty or whitespace-only titles', () => {
     expect(validateTaskTitle('', existingTasks).isValid).toBe(false);
     expect(validateTaskTitle('   ', existingTasks).isValid).toBe(false);
-    expect(validateTaskTitle('   ', existingTasks).error).toBe('Task title is required.');
+    expect(validateTaskTitle('   ', existingTasks).error).toBe('Give your task a name first.');
   });
 
   it('should reject duplicate titles (case-insensitive)', () => {

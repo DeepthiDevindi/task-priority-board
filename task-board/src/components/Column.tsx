@@ -21,7 +21,7 @@ export function Column({
 }: ColumnProps) {
   const [isDragOver, setIsDragOver] = useState(false);
 
-  // Derived tasks filtered from the single tasks array
+  // Derived tasks filtered from central tasks array
   const columnTasks = tasks.filter((t) => t.priority === priority.key);
 
   const handleDragOver = (e: React.DragEvent) => {
@@ -48,35 +48,48 @@ export function Column({
   return (
     <section
       className={`column column-${priority.key} ${isDragOver ? 'is-drag-over' : ''}`}
+      data-priority={priority.key}
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
       aria-label={`${priority.label} column with ${columnTasks.length} tasks`}
     >
+      {/* Sticky Column Header */}
       <header className="column-header">
-        <h2 className="column-title">{priority.label}</h2>
-        <span
-          className="column-count"
-          aria-label={`${columnTasks.length} tasks in ${priority.label}`}
-        >
-          {columnTasks.length}
-        </span>
+        <div className="column-header-title-wrap">
+          <span className={`column-status-dot dot-${priority.key}`} aria-hidden="true"></span>
+          <h2 className="column-title">{priority.label}</h2>
+          <span
+            className="column-count-badge"
+            aria-label={`${columnTasks.length} tasks in ${priority.label}`}
+          >
+            {columnTasks.length}
+          </span>
+        </div>
       </header>
 
+      {/* Column Content Area */}
       <div className="column-content">
+        {/* Drop zone highlight notice */}
+        {isDragOver && (
+          <div className="drop-target-indicator" aria-hidden="true">
+            <span>Drop here to set {priority.label}</span>
+          </div>
+        )}
+
         {columnTasks.length === 0 ? (
-          <div className="empty-state" role="status">
-            <p className="empty-state-text">
+          <div className="empty-state-card" role="status">
+            <p className="empty-state-headline">
               {searchQuery
                 ? `No tasks matching "${searchQuery}"`
                 : priority.emptyMessage || `No tasks in ${priority.label}`}
             </p>
-            <span className="empty-state-subtext">
-              {searchQuery ? 'Try another search term' : 'Drag items or use move buttons'}
+            <span className="empty-state-hint">
+              {searchQuery ? 'Try another search keyword' : 'Drag a task here or use the move menu'}
             </span>
           </div>
         ) : (
-          <div className="task-list">
+          <ul className="task-list">
             {columnTasks.map((task) => (
               <TaskCard
                 key={task.id}
@@ -86,7 +99,7 @@ export function Column({
                 deleteTask={deleteTask}
               />
             ))}
-          </div>
+          </ul>
         )}
       </div>
     </section>

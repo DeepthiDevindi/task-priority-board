@@ -8,7 +8,7 @@ export interface ValidationResult {
 
 /**
  * Validates a task title:
- * - Must not be empty or only whitespace
+ * - Must not be empty or only whitespace ("Give your task a name first.")
  * - Must not duplicate an existing task title (case-insensitive)
  * - Excludes the current task being edited if currentTaskId is provided
  */
@@ -22,7 +22,7 @@ export function validateTaskTitle(
   if (!cleanTitle) {
     return {
       isValid: false,
-      error: 'Task title is required.',
+      error: 'Give your task a name first.',
       cleanTitle: '',
     };
   }

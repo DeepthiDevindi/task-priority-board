@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Priority } from '../types';
-import { PRIORITIES } from '../constants';
+import PrioritySelect from './PrioritySelect';
 
 interface TaskFormProps {
   onAddTask: (title: string, priority?: Priority) => { success: boolean; error?: string };
@@ -15,7 +15,7 @@ export function TaskForm({ onAddTask }: TaskFormProps) {
     e.preventDefault();
     const result = onAddTask(title, priority);
     if (!result.success) {
-      setError(result.error || 'Failed to add task.');
+      setError(result.error || 'Give your task a name first.');
       return;
     }
 
@@ -25,14 +25,14 @@ export function TaskForm({ onAddTask }: TaskFormProps) {
   };
 
   return (
-    <form className="task-form" onSubmit={handleSubmit} aria-label="Create a new task">
+    <form className="task-form" onSubmit={handleSubmit} aria-label="Add a task">
       <div className="task-form-row">
-        <div className="input-group">
+        <div className="task-input-wrapper">
           <input
             id="task-title-input"
             type="text"
             className={`task-input ${error ? 'input-error' : ''}`}
-            placeholder="What needs to be prioritized? (e.g. Audit API security headers)"
+            placeholder="What needs doing? (e.g. Audit checkout flow)"
             value={title}
             onChange={(e) => {
               setTitle(e.target.value);
@@ -49,32 +49,15 @@ export function TaskForm({ onAddTask }: TaskFormProps) {
           )}
         </div>
 
-        <div className="select-group">
-          <label htmlFor="task-priority-select" className="sr-only">
-            Initial Priority
-          </label>
-          <select
-            id="task-priority-select"
-            className="priority-select"
-            value={priority}
-            onChange={(e) => setPriority(e.target.value as Priority)}
-            aria-label="Task initial priority"
-          >
-            {PRIORITIES.map((p) => (
-              <option key={p.key} value={p.key}>
-                {p.label}
-              </option>
-            ))}
-          </select>
-        </div>
+        <PrioritySelect value={priority} onChange={setPriority} />
 
         <button
           type="submit"
-          className="submit-btn"
+          className="add-task-submit-btn"
           id="add-task-submit-btn"
           aria-label="Add Task to Board"
         >
-          + Add Task
+          + Add a task
         </button>
       </div>
     </form>

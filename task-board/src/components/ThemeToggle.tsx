@@ -12,15 +12,15 @@ export function ThemeToggle({ theme, onToggle }: ThemeToggleProps) {
   return (
     <button
       type="button"
-      className="theme-toggle-btn"
+      className="theme-toggle-button"
       onClick={onToggle}
-      title={`Switch to ${isDark ? 'Light' : 'Dark'} Mode`}
+      title={`Switch to ${isDark ? 'Light' : 'Dark'} mode`}
       aria-label={`Current theme is ${theme}. Click to switch to ${isDark ? 'light' : 'dark'} mode.`}
     >
       <span className="theme-toggle-icon" aria-hidden="true">
         {isDark ? '🌙' : '☀️'}
       </span>
-      <span className="theme-toggle-text">{isDark ? 'Dark' : 'Light'}</span>
+      <span className="theme-toggle-label">{isDark ? 'Dark' : 'Light'}</span>
     </button>
   );
 }
